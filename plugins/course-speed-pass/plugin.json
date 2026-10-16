@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "course-speed-pass",
+  "version": "1.0.0",
+  "description": "Create local simulated course interfaces and verify their chapter flow with Playwright",
+  "author": {
+    "name": "1309594350-jpg"
+  },
+  "homepage": "https://github.com/1309594350-jpg/course-speed-pass",
+  "repository": "https://github.com/1309594350-jpg/course-speed-pass"
+}

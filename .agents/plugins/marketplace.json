@@ -1,0 +1,20 @@
+{
+  "name": "course-speed-pass",
+  "interface": {
+    "displayName": "Course speed pass"
+  },
+  "plugins": [
+    {
+      "name": "course-speed-pass",
+      "source": {
+        "source": "local",
+        "path": "./plugins/course-speed-pass"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

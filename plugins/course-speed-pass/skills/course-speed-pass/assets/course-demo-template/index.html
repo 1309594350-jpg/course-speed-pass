@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="完全本地运行的模拟网课与浏览器自动化教学沙盒"
+    />
+    <title>知行实验室 · 网课自动化教学 Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="返回页面顶部">
+        <span class="brand-mark" aria-hidden="true">知</span>
+        <span>
+          <strong>知行实验室</strong>
+          <small>Browser Automation Sandbox</small>
+        </span>
+      </a>
+      <div class="safe-badge">
+        <span class="safe-dot" aria-hidden="true"></span>
+        LOCAL DEMO · 不连接任何网课平台
+      </div>
+    </header>
+
+    <main id="top" class="app-shell">
+      <section class="course-intro" aria-labelledby="course-heading">
+        <div>
+          <p class="eyebrow">AUTOMATION LAB / 01</p>
+          <h1 id="course-heading">模拟网课自动化实验</h1>
+          <p class="intro-copy">
+            在一套自建课程中观察“播放 → 完成 → 切换章节”的完整状态流，
+            再用 Playwright 从浏览器外部验证结果。
+          </p>
+        </div>
+        <div class="overview-card" aria-label="课程总进度">
+          <div id="progress-ring" class="progress-ring" style="--progress: 0deg">
+            <div>
+              <strong id="overall-percent">0%</strong>
+              <span>总进度</span>
+            </div>
+          </div>
+          <div class="overview-copy">
+            <strong id="completed-summary">0 / 6 节</strong>
+            <span id="overview-status">等待开始实验</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="课程实验工作区">
+        <aside class="lesson-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">COURSE MAP</p>
+              <h2>课程章节</h2>
+            </div>
+            <span class="lesson-count">6 LESSONS</span>
+          </div>
+          <nav id="lesson-list" class="lesson-list" aria-label="课程章节列表"></nav>
+          <div class="boundary-note">
+            <span aria-hidden="true">⌁</span>
+            <p>
+              <strong>实验边界</strong>
+              只操作本页面的模拟数据，不读取账号、Cookie 或第三方课程信息。
+            </p>
+          </div>
+        </aside>
+
+        <div class="main-column">
+          <article class="player-card" aria-labelledby="lesson-title">
+            <div class="player-stage">
+              <div class="stage-grid" aria-hidden="true"></div>
+              <div class="orbital orbital-a" aria-hidden="true"></div>
+              <div class="orbital orbital-b" aria-hidden="true"></div>
+              <div class="chapter-watermark" aria-hidden="true">
+                <span id="chapter-number">01</span>
+              </div>
+              <div class="stage-copy">
+                <span id="lesson-kicker">第一章 · 建立实验</span>
+                <h2 id="lesson-title">自动化究竟在控制什么？</h2>
+                <p id="lesson-description">认识页面元素、状态与事件，先看懂自动化的控制对象。</p>
+              </div>
+              <div id="playing-indicator" class="playing-indicator" aria-live="polite">
+                <span></span>
+                <span></span>
+                <span></span>
+                <em>PAUSED</em>
+              </div>
+            </div>
+
+            <div class="timeline-wrap">
+              <div class="timeline-meta">
+                <span id="current-time">00:00</span>
+                <span id="duration-time">00:12</span>
+              </div>
+              <div
+                id="timeline"
+                class="timeline"
+                role="progressbar"
+                aria-label="当前章节播放进度"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+              >
+                <div id="timeline-fill" class="timeline-fill"></div>
+              </div>
+            </div>
+
+            <div class="player-controls">
+              <button id="play-button" class="control-primary" type="button">
+                <span id="play-icon" aria-hidden="true">▶</span>
+                <span id="play-label">开始播放</span>
+              </button>
+              <button id="restart-lesson" class="control-secondary" type="button">
+                重播本节
+              </button>
+              <label class="speed-control" for="speed-select">
+                演示速度
+                <select id="speed-select">
+                  <option value="1">1×</option>
+                  <option value="2">2×</option>
+                  <option value="4" selected>4×</option>
+                  <option value="8">8×</option>
+                </select>
+              </label>
+            </div>
+          </article>
+
+          <section class="lab-grid" aria-label="自动化实验控制台">
+            <article class="automation-card">
+              <div class="panel-heading compact">
+                <div>
+                  <p class="eyebrow">AUTOMATION</p>
+                  <h2>自动化控制台</h2>
+                </div>
+                <span id="automation-status" class="status-pill idle">IDLE</span>
+              </div>
+
+              <div class="flow-line" aria-label="自动化流程">
+                <span>播放</span><i>→</i><span>检测完成</span><i>→</i><span>下一章节</span>
+              </div>
+
+              <label class="switch-row" for="auto-next">
+                <span>
+                  <strong>完成后自动切换章节</strong>
+                  <small>仅作用于本地模拟课程</small>
+                </span>
+                <input id="auto-next" type="checkbox" checked />
+                <span class="switch" aria-hidden="true"></span>
+              </label>
+
+              <div class="automation-actions">
+                <button id="run-demo" class="action-dark" type="button">
+                  <span aria-hidden="true">↯</span>
+                  从头运行自动演示
+                </button>
+                <button id="reset-demo" class="action-ghost" type="button">重置全部</button>
+              </div>
+            </article>
+
+            <article class="metrics-card">
+              <p class="eyebrow">LIVE METRICS</p>
+              <h2>实时状态</h2>
+              <dl class="metrics">
+                <div>
+                  <dt>已完成</dt>
+                  <dd id="metric-completed">0</dd>
+                </div>
+                <div>
+                  <dt>正在播放</dt>
+                  <dd id="metric-current">01</dd>
+                </div>
+                <div>
+                  <dt>事件数</dt>
+                  <dd id="metric-events">1</dd>
+                </div>
+              </dl>
+              <div class="metric-foot">
+                <span class="pulse-dot" aria-hidden="true"></span>
+                <span id="metric-message">系统就绪，等待操作</span>
+              </div>
+            </article>
+          </section>
+
+          <section class="event-card" aria-labelledby="event-heading">
+            <div class="panel-heading compact">
+              <div>
+                <p class="eyebrow">EVENT STREAM</p>
+                <h2 id="event-heading">运行日志</h2>
+              </div>
+              <button id="clear-log" class="text-button" type="button">清空日志</button>
+            </div>
+            <ol id="event-log" class="event-log" aria-live="polite"></ol>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>知行实验室 · 2026</span>
+      <span>面向教学与软件测试的本地沙盒</span>
+    </footer>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>

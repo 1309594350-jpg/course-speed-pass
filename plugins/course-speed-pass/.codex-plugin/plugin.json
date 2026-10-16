@@ -1,0 +1,6 @@
+{
+  "name": "course-speed-pass",
+  "version": "1.0.0",
+  "description": "Create local simulated course interfaces and verify their chapter flow with Playwright",
+  "skills": "./skills/"
+}
