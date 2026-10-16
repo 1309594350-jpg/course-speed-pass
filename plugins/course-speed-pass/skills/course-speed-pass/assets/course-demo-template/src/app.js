@@ -43,7 +43,66 @@ const lessons = [
   },
 ];
 
+const quizQuestions = [
+  {
+    id: "q1",
+    type: "single",
+    typeLabel: "单选题",
+    prompt: "Playwright 自动化中，哪一种定位方式通常最稳定？",
+    options: ["依赖第几个 div", "页面中的随机 class", "专用 data-testid", "鼠标绝对坐标"],
+    answer: "专用 data-testid",
+    explanation: "稳定、语义明确的测试标识不依赖页面层级或坐标，更适合端到端测试。",
+  },
+  {
+    id: "q2",
+    type: "multiple",
+    typeLabel: "多选题",
+    prompt: "这个本地实验允许自动化完成哪些操作？",
+    options: ["推进模拟播放", "记录事件日志", "保存验收截图", "向真实平台提交学习进度"],
+    answer: ["推进模拟播放", "记录事件日志", "保存验收截图"],
+    explanation: "实验只控制自建页面，不向真实平台提交任何数据。",
+  },
+  {
+    id: "q3",
+    type: "truefalse",
+    typeLabel: "判断题",
+    prompt: "localStorage 保存的数据只属于当前浏览器环境。",
+    options: ["正确", "错误"],
+    answer: "正确",
+    explanation: "本例的数据保存在当前浏览器的本地存储中，不会同步到网课平台。",
+  },
+  {
+    id: "q4",
+    type: "fill",
+    typeLabel: "填空题",
+    prompt: "Playwright 打开页面常用的方法名是 ______。",
+    answer: "page.goto",
+    aliases: ["page.goto()"],
+    explanation: "page.goto(url) 用于让页面导航到指定地址。",
+  },
+  {
+    id: "q5",
+    type: "single",
+    typeLabel: "单选题",
+    prompt: "课程全部完成时，本实验会派发哪个自定义事件？",
+    options: ["course-demo-start", "course-demo-complete", "quiz-real-submit", "login-success"],
+    answer: "course-demo-complete",
+    explanation: "播放器完成最后一节后会派发 course-demo-complete，供测试脚本监听。",
+  },
+  {
+    id: "q6",
+    type: "fill",
+    typeLabel: "填空题",
+    prompt: "本地静态服务器默认地址是 http://______。",
+    answer: "127.0.0.1:4173",
+    aliases: ["localhost:4173"],
+    explanation: "启动脚本默认只监听本机 127.0.0.1 的 4173 端口。",
+  },
+];
+
 const storageKey = "zhixing-course-demo-v1";
+const quizStorageKey = "zhixing-quiz-lab-v1";
+const answerCacheKey = "zhixing-quiz-answer-cache-v1";
 
 const initialState = () => ({
   currentIndex: 0,
@@ -56,6 +115,7 @@ const initialState = () => ({
 });
 
 let state = loadState();
+let quizState = loadQuizState();
 let timerId = null;
 let lastTick = 0;
 let toastTimer = null;
@@ -90,6 +150,22 @@ const elements = {
   metricCurrent: document.querySelector("#metric-current"),
   metricEvents: document.querySelector("#metric-events"),
   metricMessage: document.querySelector("#metric-message"),
+  quizStatus: document.querySelector("#quiz-status"),
+  quizMode: document.querySelector("#quiz-mode"),
+  confidenceThreshold: document.querySelector("#confidence-threshold"),
+  reviewLowConfidence: document.querySelector("#review-low-confidence"),
+  runQuiz: document.querySelector("#run-quiz"),
+  approveReview: document.querySelector("#approve-review"),
+  submitQuiz: document.querySelector("#submit-quiz"),
+  quizCoverage: document.querySelector("#quiz-coverage"),
+  quizScore: document.querySelector("#quiz-score"),
+  quizReviewCount: document.querySelector("#quiz-review-count"),
+  quizCacheHits: document.querySelector("#quiz-cache-hits"),
+  questionList: document.querySelector("#question-list"),
+  retryWrong: document.querySelector("#retry-wrong"),
+  resetQuiz: document.querySelector("#reset-quiz"),
+  exportQuizReport: document.querySelector("#export-quiz-report"),
+  quizMessage: document.querySelector("#quiz-message"),
   toast: document.querySelector("#toast"),
 };
 
@@ -126,6 +202,385 @@ function saveState() {
       mode: state.mode,
     }),
   );
+}
+
+function initialQuizState() {
+  return {
+    answers: {},
+    decisions: {},
+    approvedReviews: [],
+    wrongIds: [],
+    status: "idle",
+    score: null,
+    correctCount: 0,
+    attempts: 0,
+    cacheHits: 0,
+    mode: "fill",
+    threshold: 0.75,
+    reviewLowConfidence: true,
+    message: "题库已加载，等待运行。",
+  };
+}
+
+function loadQuizState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(quizStorageKey));
+    if (!saved || typeof saved !== "object") return initialQuizState();
+    return {
+      ...initialQuizState(),
+      ...saved,
+      answers: saved.answers || {},
+      decisions: saved.decisions || {},
+      approvedReviews: Array.isArray(saved.approvedReviews) ? saved.approvedReviews : [],
+      wrongIds: Array.isArray(saved.wrongIds) ? saved.wrongIds : [],
+      status: saved.status === "running" ? "filled" : saved.status || "idle",
+    };
+  } catch {
+    return initialQuizState();
+  }
+}
+
+function saveQuizState() {
+  localStorage.setItem(quizStorageKey, JSON.stringify(quizState));
+}
+
+function fingerprint(text) {
+  const normalized = text.toLowerCase().replace(/\s+/g, "").replace(/[？?。，、：:（）()]/g, "");
+  let hash = 2166136261;
+  for (let index = 0; index < normalized.length; index += 1) {
+    hash ^= normalized.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `q-${(hash >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+function loadAnswerCache() {
+  try {
+    const cache = JSON.parse(localStorage.getItem(answerCacheKey));
+    return cache && typeof cache === "object" ? cache : {};
+  } catch {
+    return {};
+  }
+}
+
+function answerCatalog() {
+  const profiles = {
+    q1: { answer: "专用 data-testid", confidence: 0.99 },
+    q2: { answer: ["推进模拟播放", "记录事件日志", "保存验收截图"], confidence: 0.94 },
+    q3: { answer: "正确", confidence: 0.97 },
+    q4: { answer: "page.goto", confidence: 0.91 },
+    q6: { answer: "127.0.0.1:4173", confidence: 0.88 },
+  };
+  return Object.fromEntries(
+    quizQuestions
+      .filter((question) => profiles[question.id])
+      .map((question) => [fingerprint(question.prompt), profiles[question.id]]),
+  );
+}
+
+function seedAnswerCache() {
+  const cache = loadAnswerCache();
+  const catalog = answerCatalog();
+  ["q1", "q3"].forEach((id) => {
+    const question = quizQuestions.find((item) => item.id === id);
+    const key = fingerprint(question.prompt);
+    if (!cache[key]) cache[key] = { ...catalog[key], source: "题目指纹缓存" };
+  });
+  localStorage.setItem(answerCacheKey, JSON.stringify(cache));
+}
+
+function resolveAnswer(question) {
+  const key = fingerprint(question.prompt);
+  const cache = loadAnswerCache();
+  if (cache[key]) return { ...cache[key], source: "题目指纹缓存", fingerprint: key, cacheHit: true };
+
+  const catalog = answerCatalog();
+  if (catalog[key]) {
+    const result = { ...catalog[key], source: "本地题库", fingerprint: key, cacheHit: false };
+    cache[key] = result;
+    localStorage.setItem(answerCacheKey, JSON.stringify(cache));
+    return result;
+  }
+
+  if (question.id === "q5" && question.prompt.includes("自定义事件")) {
+    const result = {
+      answer: "course-demo-complete",
+      confidence: 0.68,
+      source: "规则匹配",
+      fingerprint: key,
+      cacheHit: false,
+    };
+    cache[key] = result;
+    localStorage.setItem(answerCacheKey, JSON.stringify(cache));
+    return result;
+  }
+
+  return {
+    answer: "",
+    confidence: 0,
+    source: "未命中",
+    fingerprint: key,
+    cacheHit: false,
+  };
+}
+
+function normalizeText(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/[：:。]/g, "");
+}
+
+function isAnswerCorrect(question, value) {
+  if (question.type === "multiple") {
+    const actual = Array.isArray(value) ? [...value].sort() : [];
+    const expected = [...question.answer].sort();
+    return JSON.stringify(actual) === JSON.stringify(expected);
+  }
+  const accepted = [question.answer, ...(question.aliases || [])].map(normalizeText);
+  return accepted.includes(normalizeText(value));
+}
+
+function answeredCount() {
+  return quizQuestions.filter((question) => {
+    const answer = quizState.answers[question.id];
+    return Array.isArray(answer) ? answer.length > 0 : String(answer ?? "").trim().length > 0;
+  }).length;
+}
+
+function pendingReviewIds() {
+  if (!quizState.reviewLowConfidence) return [];
+  return quizQuestions
+    .filter((question) => {
+      const decision = quizState.decisions[question.id];
+      return decision && decision.confidence < quizState.threshold && !quizState.approvedReviews.includes(question.id);
+    })
+    .map((question) => question.id);
+}
+
+function collectAnswerFromCard(question) {
+  const card = elements.questionList.querySelector(`[data-question-id="${question.id}"]`);
+  if (!card) return;
+  if (question.type === "multiple") {
+    quizState.answers[question.id] = [...card.querySelectorAll("input:checked")].map((input) => input.value);
+  } else if (question.type === "single" || question.type === "truefalse") {
+    quizState.answers[question.id] = card.querySelector("input:checked")?.value || "";
+  } else {
+    quizState.answers[question.id] = card.querySelector("input[type='text']")?.value || "";
+  }
+  quizState.score = null;
+  quizState.status = pendingReviewIds().length ? "review" : answeredCount() ? "filled" : "idle";
+  quizState.message = "检测到手动修改，提交前可继续检查。";
+  saveQuizState();
+  renderQuiz();
+}
+
+function questionInputMarkup(question, answer) {
+  if (question.type === "single" || question.type === "truefalse" || question.type === "multiple") {
+    const inputType = question.type === "multiple" ? "checkbox" : "radio";
+    return `<div class="question-options">${question.options
+      .map((option) => {
+        const checked = Array.isArray(answer) ? answer.includes(option) : answer === option;
+        return `<label class="option-row"><input type="${inputType}" name="answer-${question.id}" value="${option}" ${
+          checked ? "checked" : ""
+        } /><span>${option}</span></label>`;
+      })
+      .join("")}</div>`;
+  }
+
+  return `<input class="question-input" type="text" value="${answer || ""}" placeholder="在这里填写答案" aria-label="${question.prompt}" />`;
+}
+
+function renderQuiz() {
+  const pending = pendingReviewIds();
+  const answered = answeredCount();
+  const coverage = Math.round((answered / quizQuestions.length) * 100);
+  const status = quizState.status || "idle";
+
+  elements.quizMode.value = quizState.mode;
+  elements.confidenceThreshold.value = String(quizState.threshold);
+  elements.reviewLowConfidence.checked = quizState.reviewLowConfidence;
+  elements.quizStatus.textContent = status.toUpperCase();
+  elements.quizStatus.className = `status-pill ${status}`;
+  elements.quizCoverage.textContent = `${coverage}%`;
+  elements.quizScore.textContent = quizState.score === null ? "--" : `${quizState.correctCount}/${quizQuestions.length} · ${quizState.score}%`;
+  elements.quizReviewCount.textContent = String(pending.length);
+  elements.quizCacheHits.textContent = String(quizState.cacheHits);
+  elements.quizMessage.textContent = quizState.message;
+  elements.approveReview.disabled = pending.length === 0;
+  elements.retryWrong.disabled = quizState.wrongIds.length === 0;
+
+  elements.questionList.innerHTML = quizQuestions
+    .map((question, index) => {
+      const decision = quizState.decisions[question.id];
+      const answer = quizState.answers[question.id];
+      const needsReview = pending.includes(question.id);
+      const hasResult = quizState.score !== null;
+      const correct = hasResult && isAnswerCorrect(question, answer);
+      const resultClass = hasResult ? (correct ? "correct" : "incorrect") : needsReview ? "review" : "";
+      const trace = decision
+        ? `<div class="answer-trace"><span>${decision.source}</span><span class="confidence">置信度 ${Math.round(
+            decision.confidence * 100,
+          )}%</span>${needsReview ? '<strong class="review-flag">待复核</strong>' : ""}</div>`
+        : '<div class="answer-trace"><span>尚未匹配答案</span></div>';
+      const explanation = hasResult
+        ? `<p class="explanation"><strong>${correct ? "回答正确" : `正确答案：${
+            Array.isArray(question.answer) ? question.answer.join("、") : question.answer
+          }`}</strong>${question.explanation}</p>`
+        : "";
+
+      return `<article class="question-card ${resultClass}" data-question-id="${question.id}">
+        <div class="question-top"><span class="question-number">${String(index + 1).padStart(2, "0")}</span><span class="question-type">${
+          question.typeLabel
+        }</span></div>
+        <h3>${question.prompt}</h3>
+        ${questionInputMarkup(question, answer)}
+        ${trace}
+        ${explanation}
+      </article>`;
+    })
+    .join("");
+
+  elements.questionList.querySelectorAll("input").forEach((input) => {
+    input.addEventListener("change", () => {
+      const card = input.closest("[data-question-id]");
+      const question = quizQuestions.find((item) => item.id === card.dataset.questionId);
+      collectAnswerFromCard(question);
+    });
+  });
+
+  document.body.dataset.quizState = status;
+  document.body.dataset.quizScore = String(quizState.score ?? 0);
+  document.body.dataset.quizCoverage = String(coverage);
+  document.body.dataset.quizReview = String(pending.length);
+  saveQuizState();
+}
+
+function runQuizAutomation({ onlyIds = null } = {}) {
+  quizState.mode = elements.quizMode.value;
+  quizState.threshold = Number(elements.confidenceThreshold.value);
+  quizState.reviewLowConfidence = elements.reviewLowConfidence.checked;
+  quizState.status = "running";
+  quizState.score = null;
+  quizState.correctCount = 0;
+  quizState.wrongIds = [];
+  quizState.attempts += 1;
+  quizState.cacheHits = 0;
+  quizState.approvedReviews = quizState.approvedReviews.filter((id) => !onlyIds || !onlyIds.includes(id));
+
+  const targets = onlyIds ? quizQuestions.filter((question) => onlyIds.includes(question.id)) : quizQuestions;
+  targets.forEach((question) => {
+    const decision = resolveAnswer(question);
+    quizState.answers[question.id] = decision.answer;
+    quizState.decisions[question.id] = decision;
+    if (decision.cacheHit) quizState.cacheHits += 1;
+  });
+
+  const pending = pendingReviewIds();
+  quizState.status = pending.length ? "review" : "filled";
+  quizState.message = pending.length
+    ? `已填答 ${answeredCount()} 题，其中 ${pending.length} 题低于置信度阈值，请先复核。`
+    : `已填答 ${answeredCount()} 题，可以模拟提交。`;
+  addEvent(`答题引擎完成匹配：覆盖 ${answeredCount()}/${quizQuestions.length}，缓存命中 ${quizState.cacheHits}`, "automation");
+  renderQuiz();
+
+  if (quizState.mode === "submit" && pending.length === 0) submitQuizAnswers();
+}
+
+function approvePendingReviews() {
+  const pending = pendingReviewIds();
+  quizState.approvedReviews = [...new Set([...quizState.approvedReviews, ...pending])];
+  quizState.status = answeredCount() ? "filled" : "idle";
+  quizState.message = `已人工确认 ${pending.length} 题，可以模拟提交。`;
+  addEvent(`人工复核通过：${pending.length} 题`, "success");
+  renderQuiz();
+  if (quizState.mode === "submit") submitQuizAnswers();
+}
+
+function submitQuizAnswers() {
+  const pending = pendingReviewIds();
+  if (pending.length) {
+    quizState.status = "review";
+    quizState.message = `仍有 ${pending.length} 题等待复核，暂不模拟提交。`;
+    showToast(quizState.message);
+    renderQuiz();
+    return false;
+  }
+
+  const wrongIds = quizQuestions
+    .filter((question) => !isAnswerCorrect(question, quizState.answers[question.id]))
+    .map((question) => question.id);
+  quizState.wrongIds = wrongIds;
+  quizState.correctCount = quizQuestions.length - wrongIds.length;
+  quizState.score = Math.round((quizState.correctCount / quizQuestions.length) * 100);
+  quizState.status = "complete";
+  quizState.message = wrongIds.length
+    ? `模拟评分完成：${quizState.correctCount}/${quizQuestions.length}，可重试错题。`
+    : `模拟评分完成：${quizState.correctCount}/${quizQuestions.length}，全部正确。`;
+  addEvent(`模拟答题提交完成：${quizState.correctCount}/${quizQuestions.length}，得分 ${quizState.score}`, "success");
+  showToast(quizState.message);
+  renderQuiz();
+  window.dispatchEvent(new CustomEvent("quiz-demo-complete", { detail: getQuizState() }));
+  return true;
+}
+
+function resetQuizLab({ clearCache = false } = {}) {
+  quizState = initialQuizState();
+  if (clearCache) localStorage.removeItem(answerCacheKey);
+  seedAnswerCache();
+  addEvent("答题实验已重置", "automation");
+  renderQuiz();
+}
+
+function retryWrongAnswers() {
+  if (!quizState.wrongIds.length) return;
+  const targets = [...quizState.wrongIds];
+  targets.forEach((id) => delete quizState.answers[id]);
+  quizState.message = `正在重新匹配 ${targets.length} 道错题。`;
+  runQuizAutomation({ onlyIds: targets });
+}
+
+function getQuizState() {
+  const answered = answeredCount();
+  return {
+    status: quizState.status,
+    answered,
+    total: quizQuestions.length,
+    coverage: Math.round((answered / quizQuestions.length) * 100),
+    score: quizState.score,
+    correctCount: quizState.correctCount,
+    pendingReview: pendingReviewIds().length,
+    cacheHits: quizState.cacheHits,
+    attempts: quizState.attempts,
+    mode: quizState.mode,
+  };
+}
+
+function exportQuizReport() {
+  const report = {
+    exportedAt: new Date().toISOString(),
+    environment: "local-simulation-only",
+    summary: getQuizState(),
+    questions: quizQuestions.map((question) => ({
+      id: question.id,
+      fingerprint: fingerprint(question.prompt),
+      type: question.type,
+      prompt: question.prompt,
+      answer: quizState.answers[question.id] ?? null,
+      correct: quizState.score === null ? null : isAnswerCorrect(question, quizState.answers[question.id]),
+      source: quizState.decisions[question.id]?.source || null,
+      confidence: quizState.decisions[question.id]?.confidence ?? null,
+    })),
+  };
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `quiz-lab-report-${Date.now()}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast("本地答题报告已导出");
 }
 
 function formatTime(seconds) {
@@ -378,6 +833,33 @@ elements.clearLog.addEventListener("click", () => {
   render();
 });
 
+elements.quizMode.addEventListener("change", (event) => {
+  quizState.mode = event.target.value;
+  quizState.message = quizState.mode === "submit" ? "模拟提交模式：复核通过后自动评分。" : "仅填答模式：需要手动点击模拟提交。";
+  renderQuiz();
+});
+
+elements.confidenceThreshold.addEventListener("change", (event) => {
+  quizState.threshold = Number(event.target.value);
+  quizState.status = pendingReviewIds().length ? "review" : answeredCount() ? "filled" : "idle";
+  quizState.message = `复核阈值已调整为 ${Math.round(quizState.threshold * 100)}%。`;
+  renderQuiz();
+});
+
+elements.reviewLowConfidence.addEventListener("change", (event) => {
+  quizState.reviewLowConfidence = event.target.checked;
+  quizState.status = pendingReviewIds().length ? "review" : answeredCount() ? "filled" : "idle";
+  quizState.message = quizState.reviewLowConfidence ? "低置信度复核已开启。" : "低置信度复核已关闭，仍建议人工检查。";
+  renderQuiz();
+});
+
+elements.runQuiz.addEventListener("click", () => runQuizAutomation());
+elements.approveReview.addEventListener("click", approvePendingReviews);
+elements.submitQuiz.addEventListener("click", submitQuizAnswers);
+elements.retryWrong.addEventListener("click", retryWrongAnswers);
+elements.resetQuiz.addEventListener("click", () => resetQuizLab());
+elements.exportQuizReport.addEventListener("click", exportQuizReport);
+
 window.courseDemo = {
   getState: () => ({
     ...state,
@@ -395,7 +877,17 @@ window.courseDemo = {
     state.speed = Number(speed);
     render();
   },
+  quiz: {
+    getState: getQuizState,
+    run: () => runQuizAutomation(),
+    approveReview: approvePendingReviews,
+    submit: submitQuizAnswers,
+    reset: () => resetQuizLab(),
+    exportReport: exportQuizReport,
+  },
 };
 
+seedAnswerCache();
 addEvent("本地模拟课程加载完成");
 render();
+renderQuiz();

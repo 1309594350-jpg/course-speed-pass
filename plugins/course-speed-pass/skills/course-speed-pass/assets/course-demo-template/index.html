@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="完全本地运行的模拟网课与浏览器自动化教学沙盒"
+      content="完全本地运行的模拟课程、智能答题与浏览器自动化教学沙盒"
     />
-    <title>知行实验室 · 网课自动化教学 Demo</title>
+    <title>知行实验室 · 课程与答题自动化 Demo</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -24,7 +24,7 @@
       </a>
       <div class="safe-badge">
         <span class="safe-dot" aria-hidden="true"></span>
-        LOCAL DEMO · 不连接任何网课平台
+          LOCAL DEMO · 无登录 · 不连接任何网课平台
       </div>
     </header>
 
@@ -32,10 +32,10 @@
       <section class="course-intro" aria-labelledby="course-heading">
         <div>
           <p class="eyebrow">AUTOMATION LAB / 01</p>
-          <h1 id="course-heading">模拟网课自动化实验</h1>
+          <h1 id="course-heading">课程与答题自动化实验</h1>
           <p class="intro-copy">
-            在一套自建课程中观察“播放 → 完成 → 切换章节”的完整状态流，
-            再用 Playwright 从浏览器外部验证结果。
+            在自建课程中观察播放与章节切换，再用本地题库、置信度复核和
+            Playwright 验证模拟答题流程。整个实验不需要登录。
           </p>
         </div>
         <div class="overview-card" aria-label="课程总进度">
@@ -66,7 +66,7 @@
             <span aria-hidden="true">⌁</span>
             <p>
               <strong>实验边界</strong>
-              只操作本页面的模拟数据，不读取账号、Cookie 或第三方课程信息。
+              只操作本页面的虚构课程和题目，不读取账号、Cookie、第三方课程或真实作业。
             </p>
           </div>
         </aside>
@@ -197,13 +197,76 @@
             </div>
             <ol id="event-log" class="event-log" aria-live="polite"></ol>
           </section>
+
+          <section class="quiz-lab" aria-labelledby="quiz-heading">
+            <div class="quiz-heading-row">
+              <div>
+                <p class="eyebrow">QUIZ ENGINE / LOCAL ONLY</p>
+                <h2 id="quiz-heading">智能答题实验室</h2>
+                <p class="quiz-intro">
+                  本地题库优先，结合题目指纹缓存、规则匹配和置信度复核。
+                  所有“提交”均为本页面内的模拟评分。
+                </p>
+              </div>
+              <span id="quiz-status" class="status-pill idle">IDLE</span>
+            </div>
+
+            <div class="quiz-toolbar" aria-label="答题策略设置">
+              <label>
+                运行模式
+                <select id="quiz-mode">
+                  <option value="fill">仅填答，不评分</option>
+                  <option value="submit">填答后模拟提交</option>
+                </select>
+              </label>
+              <label>
+                置信度阈值
+                <select id="confidence-threshold">
+                  <option value="0.6">60%</option>
+                  <option value="0.75" selected>75%</option>
+                  <option value="0.9">90%</option>
+                </select>
+              </label>
+              <label class="review-toggle" for="review-low-confidence">
+                <input id="review-low-confidence" type="checkbox" checked />
+                <span>低置信度先复核</span>
+              </label>
+              <button id="run-quiz" class="action-dark" type="button">自动填答</button>
+              <button id="approve-review" class="action-ghost" type="button" disabled>确认待复核答案</button>
+              <button id="submit-quiz" class="action-ghost" type="button">模拟提交</button>
+            </div>
+
+            <div class="quiz-summary" aria-label="答题指标">
+              <div><span>题库覆盖</span><strong id="quiz-coverage">0%</strong></div>
+              <div><span>当前得分</span><strong id="quiz-score">--</strong></div>
+              <div><span>待复核</span><strong id="quiz-review-count">0</strong></div>
+              <div><span>缓存命中</span><strong id="quiz-cache-hits">0</strong></div>
+            </div>
+
+            <div id="question-list" class="question-grid" aria-live="polite"></div>
+
+            <div class="quiz-footer-actions">
+              <button id="retry-wrong" class="control-secondary" type="button" disabled>重试错题</button>
+              <button id="reset-quiz" class="control-secondary" type="button">重置答题</button>
+              <button id="export-quiz-report" class="text-button" type="button">导出 JSON 报告</button>
+              <span id="quiz-message">题库已加载，等待运行。</span>
+            </div>
+
+            <div class="provider-strip" aria-label="答案来源优先级">
+              <strong>答案来源</strong>
+              <span>① 指纹缓存</span>
+              <span>② 本地题库</span>
+              <span>③ 规则匹配</span>
+              <span class="disabled-provider">④ AI 适配器占位（默认关闭）</span>
+            </div>
+          </section>
         </div>
       </section>
     </main>
 
     <footer>
       <span>知行实验室 · 2026</span>
-      <span>面向教学与软件测试的本地沙盒</span>
+      <span>面向教学与软件测试的本地课程、答题沙盒</span>
     </footer>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>

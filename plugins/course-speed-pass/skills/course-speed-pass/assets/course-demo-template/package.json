@@ -1,9 +1,9 @@
 {
   "name": "zhixing-course-automation-sandbox",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "本地模拟网课与 Playwright 浏览器自动化教学 Demo",
+  "description": "本地模拟课程、智能答题与 Playwright 浏览器自动化教学 Demo",
   "scripts": {
     "start": "node scripts/server.mjs",
     "automation": "node automation/runner.mjs",
