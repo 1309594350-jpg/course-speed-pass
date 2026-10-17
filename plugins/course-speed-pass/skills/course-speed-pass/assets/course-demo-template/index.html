@@ -24,7 +24,7 @@
       </a>
       <div class="safe-badge">
         <span class="safe-dot" aria-hidden="true"></span>
-          LOCAL DEMO · 无登录 · 不连接任何网课平台
+        LOCAL DEMO · 无登录 · 不连接任何网课平台
       </div>
     </header>
 
@@ -204,12 +204,119 @@
                 <p class="eyebrow">QUIZ ENGINE / LOCAL ONLY</p>
                 <h2 id="quiz-heading">智能答题实验室</h2>
                 <p class="quiz-intro">
-                  本地题库优先，结合题目指纹缓存、规则匹配和置信度复核。
+                  可导入 JSON/CSV 本地题库，结合题目指纹缓存、规则匹配和置信度复核。
                   所有“提交”均为本页面内的模拟评分。
                 </p>
               </div>
               <span id="quiz-status" class="status-pill idle">IDLE</span>
             </div>
+
+            <section class="bank-panel" aria-labelledby="bank-heading">
+              <div class="bank-heading-row">
+                <div>
+                  <p class="eyebrow">QUESTION BANK / IMPORT</p>
+                  <h3 id="bank-heading">本地题库管理</h3>
+                  <p>支持 JSON、CSV；导入前校验题型和答案，按题目指纹去重。</p>
+                </div>
+                <div class="bank-stats" aria-label="题库统计">
+                  <span>当前 <strong id="bank-total">6</strong></span>
+                  <span>导入 <strong id="bank-imported">0</strong></span>
+                  <span>重复 <strong id="bank-duplicates">0</strong></span>
+                  <span>拒绝 <strong id="bank-rejected">0</strong></span>
+                </div>
+              </div>
+              <div class="bank-actions">
+                <label>
+                  导入方式
+                  <select id="bank-import-mode">
+                    <option value="merge">合并并去重</option>
+                    <option value="replace">替换当前题库</option>
+                  </select>
+                </label>
+                <input id="bank-file-input" type="file" accept=".json,.csv,application/json,text/csv" hidden />
+                <button id="import-bank" class="action-dark" type="button">选择题库文件</button>
+                <button id="download-bank-example" class="action-ghost" type="button">下载格式示例</button>
+                <button id="export-bank" class="action-ghost" type="button">导出当前题库</button>
+                <button id="restore-starter-bank" class="text-button" type="button">恢复内置题库</button>
+              </div>
+              <div id="bank-message" class="bank-message" role="status">等待导入；文件只在当前浏览器本地处理。</div>
+            </section>
+
+            <section class="script-console" aria-labelledby="script-console-heading">
+              <div class="script-console-heading">
+                <div>
+                  <p class="eyebrow">USERSCRIPT PATTERNS / LOCAL QUEUE</p>
+                  <h3 id="script-console-heading">本地脚本运行台</h3>
+                  <p>借鉴油猴脚本的配置、队列和状态提示，只调度本页面的模拟题目。</p>
+                </div>
+                <span id="queue-status" class="status-pill idle">IDLE</span>
+              </div>
+
+              <div class="console-settings">
+                <label>
+                  配置档案
+                  <select id="queue-profile">
+                    <option value="balanced">均衡模式</option>
+                    <option value="cautious">谨慎模式</option>
+                    <option value="fast">快速演示</option>
+                    <option value="custom">自定义</option>
+                  </select>
+                </label>
+                <label>
+                  任务范围
+                  <select id="queue-scope">
+                    <option value="all">全部题目</option>
+                    <option value="unanswered">仅未答题</option>
+                    <option value="wrong">仅错题</option>
+                  </select>
+                </label>
+                <label>
+                  步骤间隔
+                  <select id="queue-delay">
+                    <option value="0">无延迟</option>
+                    <option value="250" selected>250 ms</option>
+                    <option value="600">600 ms</option>
+                  </select>
+                </label>
+                <label>
+                  失败重试
+                  <select id="queue-retries">
+                    <option value="0">不重试</option>
+                    <option value="1" selected>最多 1 次</option>
+                    <option value="2">最多 2 次</option>
+                  </select>
+                </label>
+                <label class="review-toggle" for="queue-dry-run">
+                  <input id="queue-dry-run" type="checkbox" />
+                  <span>预演模式，不写答案</span>
+                </label>
+              </div>
+
+              <div class="console-actions">
+                <button id="build-queue" class="action-ghost" type="button">生成任务队列</button>
+                <button id="start-queue" class="action-dark" type="button">开始运行</button>
+                <button id="pause-queue" class="action-ghost" type="button" disabled>暂停</button>
+                <button id="stop-queue" class="action-ghost" type="button" disabled>停止</button>
+                <input id="queue-settings-file" type="file" accept=".json,application/json" hidden />
+                <button id="export-queue-settings" class="text-button" type="button">导出设置</button>
+                <button id="import-queue-settings" class="text-button" type="button">导入设置</button>
+              </div>
+
+              <div class="queue-progress" aria-label="任务队列进度">
+                <div><span id="queue-progress-fill"></span></div>
+                <strong id="queue-progress-text">0 / 0</strong>
+              </div>
+              <div class="queue-summary" aria-label="任务状态统计">
+                <span>等待 <strong id="queue-pending">0</strong></span>
+                <span>运行 <strong id="queue-running">0</strong></span>
+                <span>复核 <strong id="queue-review">0</strong></span>
+                <span>完成 <strong id="queue-done">0</strong></span>
+                <span>失败 <strong id="queue-failed">0</strong></span>
+                <span>检测到题卡 <strong id="queue-dom-count">0</strong></span>
+              </div>
+              <ol id="queue-list" class="queue-list" aria-live="polite"></ol>
+              <div id="queue-message" class="bank-message" role="status">设置会保存在当前浏览器；先生成队列，再开始运行。</div>
+            </section>
 
             <div class="quiz-toolbar" aria-label="答题策略设置">
               <label>
@@ -255,10 +362,42 @@
             <div class="provider-strip" aria-label="答案来源优先级">
               <strong>答案来源</strong>
               <span>① 指纹缓存</span>
-              <span>② 本地题库</span>
+              <span>② 导入/内置题库</span>
               <span>③ 规则匹配</span>
-              <span class="disabled-provider">④ AI 适配器占位（默认关闭）</span>
+              <span>④ 人工确认的 AI 结果</span>
             </div>
+
+            <section class="ai-review-panel" aria-labelledby="ai-review-heading">
+              <div class="ai-review-copy">
+                <p class="eyebrow">AI REVIEW / MANUAL HANDOFF</p>
+                <h3 id="ai-review-heading">DeepSeek 辅助复核</h3>
+                <p>
+                  生成当前模拟题的查询提示词，复制后手动打开 DeepSeek 网页查询，再将 JSON
+                  结果粘贴回来。程序不会读取登录状态、操控第三方网页或自动提交真实作业。
+                </p>
+              </div>
+              <div class="ai-review-controls">
+                <label>
+                  选择模拟题
+                  <select id="ai-question-select"></select>
+                </label>
+                <button id="generate-ai-prompt" class="action-dark" type="button">生成复核提示词</button>
+                <button id="copy-ai-prompt" class="action-ghost" type="button">复制提示词</button>
+                <a id="open-deepseek" class="action-link" href="https://chat.deepseek.com/" target="_blank" rel="noopener noreferrer">手动打开官方 DeepSeek</a>
+              </div>
+              <label class="ai-textarea-label" for="ai-prompt-preview">
+                提示词预览
+                <textarea id="ai-prompt-preview" readonly placeholder="先选择题目并生成提示词"></textarea>
+              </label>
+              <label class="ai-textarea-label" for="ai-response-input">
+                粘贴 DeepSeek 返回的 JSON
+                <textarea id="ai-response-input" placeholder='例如：{"answer":"B","confidence":0.82,"explanation":"..."}'></textarea>
+              </label>
+              <div class="ai-review-footer">
+                <button id="apply-ai-response" class="control-secondary" type="button">应用外部复核答案</button>
+                <span id="ai-review-message">外部结果默认需要人工确认，不会自动写入永久题库。</span>
+              </div>
+            </section>
           </section>
         </div>
       </section>

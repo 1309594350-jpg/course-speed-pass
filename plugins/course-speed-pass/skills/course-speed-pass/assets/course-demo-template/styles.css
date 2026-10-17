@@ -669,7 +669,8 @@ h2 {
 .control-primary,
 .control-secondary,
 .action-dark,
-.action-ghost {
+.action-ghost,
+.action-link {
   border-radius: 13px;
   font-weight: 700;
 }
@@ -702,7 +703,8 @@ h2 {
 }
 
 .control-secondary:hover,
-.action-ghost:hover {
+.action-ghost:hover,
+.action-link:hover {
   background: rgba(23, 33, 27, 0.05);
 }
 
@@ -853,6 +855,18 @@ h2 {
   background: transparent;
 }
 
+.action-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 39px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.55);
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -980,6 +994,290 @@ h2 {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.8;
+}
+
+.bank-panel,
+.script-console,
+.ai-review-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 19px;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.bank-heading-row,
+.bank-actions,
+.bank-stats,
+.script-console-heading,
+.console-actions,
+.queue-progress,
+.queue-summary,
+.ai-review-controls,
+.ai-review-footer {
+  display: flex;
+  align-items: center;
+}
+
+.bank-heading-row {
+  gap: 20px;
+  justify-content: space-between;
+}
+
+.bank-heading-row h3,
+.script-console-heading h3,
+.ai-review-copy h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.bank-heading-row p:not(.eyebrow),
+.script-console-heading p:not(.eyebrow),
+.ai-review-copy p:not(.eyebrow) {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+.bank-stats {
+  flex-wrap: wrap;
+  gap: 7px;
+  justify-content: flex-end;
+}
+
+.bank-stats span {
+  padding: 7px 9px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(23, 33, 27, 0.05);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+}
+
+.bank-stats strong {
+  color: var(--ink);
+}
+
+.bank-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.bank-actions > label,
+.ai-review-controls > label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.bank-actions select,
+.ai-review-controls select {
+  min-height: 39px;
+  padding: 8px 30px 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--ink);
+  background: white;
+  font-size: 10px;
+}
+
+.bank-actions button {
+  min-height: 39px;
+}
+
+.bank-actions .action-dark {
+  flex: 0 1 260px;
+}
+
+.bank-actions .text-button {
+  margin-left: auto;
+}
+
+.bank-message {
+  margin-top: 11px;
+  padding: 10px 12px;
+  border-radius: 11px;
+  color: var(--muted);
+  background: rgba(23, 33, 27, 0.035);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+}
+
+.bank-message.success {
+  color: #245d3f;
+  background: rgba(219, 239, 223, 0.72);
+}
+
+.bank-message.error {
+  color: #8a3f38;
+  background: rgba(255, 226, 220, 0.72);
+}
+
+.script-console {
+  background: linear-gradient(135deg, rgba(23, 61, 45, 0.045), rgba(255, 255, 255, 0.58));
+}
+
+.script-console-heading {
+  gap: 20px;
+  justify-content: space-between;
+}
+
+.console-settings {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr)) minmax(175px, 1.15fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.console-settings > label:not(.review-toggle) {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.console-settings select {
+  min-height: 39px;
+  padding: 8px 30px 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--ink);
+  background: white;
+  font-size: 10px;
+}
+
+.console-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.console-actions button {
+  min-height: 38px;
+}
+
+.console-actions .action-dark {
+  flex: 0 1 145px;
+}
+
+.console-actions .text-button:first-of-type {
+  margin-left: auto;
+}
+
+.console-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.queue-progress {
+  gap: 12px;
+  margin-top: 13px;
+}
+
+.queue-progress > div {
+  height: 7px;
+  flex: 1;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(23, 33, 27, 0.09);
+}
+
+.queue-progress > div span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--green), var(--lime));
+  transition: width 180ms ease;
+}
+
+.queue-progress strong {
+  min-width: 46px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  text-align: right;
+}
+
+.queue-summary {
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.queue-summary span {
+  padding: 6px 8px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(23, 33, 27, 0.045);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8px;
+}
+
+.queue-summary strong {
+  color: var(--ink);
+}
+
+.queue-list {
+  display: grid;
+  gap: 6px;
+  max-height: 180px;
+  margin: 11px 0 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.queue-list li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.62);
+  font-size: 9px;
+}
+
+.queue-list li .queue-index,
+.queue-list li .queue-item-status {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8px;
+}
+
+.queue-list li .queue-title {
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.queue-list li.running {
+  background: rgba(201, 240, 108, 0.19);
+}
+
+.queue-list li.review {
+  background: rgba(255, 229, 184, 0.56);
+}
+
+.queue-list li.failed {
+  background: rgba(255, 226, 220, 0.68);
+}
+
+.status-pill.ready,
+.status-pill.paused {
+  color: #24535d;
+  background: #dceff1;
+}
+
+.status-pill.stopped {
+  color: #6c6256;
+  background: #ece8df;
 }
 
 .status-pill.filled {
@@ -1203,6 +1501,12 @@ h2 {
   background: #fff0cf;
 }
 
+.decision-note {
+  width: 100%;
+  color: #506057;
+  line-height: 1.5;
+}
+
 .explanation {
   margin: 12px 0 0;
   padding: 11px;
@@ -1256,6 +1560,59 @@ h2 {
   color: rgba(255, 255, 255, 0.38);
 }
 
+.ai-review-panel {
+  background: linear-gradient(135deg, rgba(23, 61, 45, 0.055), rgba(201, 240, 108, 0.08));
+}
+
+.ai-review-controls {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.ai-review-controls > label {
+  min-width: min(100%, 260px);
+  flex: 1;
+}
+
+.ai-review-controls button,
+.ai-review-controls .action-link {
+  align-self: end;
+}
+
+.ai-textarea-label {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.ai-textarea-label textarea {
+  width: 100%;
+  min-height: 92px;
+  resize: vertical;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.76);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.ai-review-footer {
+  gap: 12px;
+  margin-top: 11px;
+}
+
+.ai-review-footer span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
 footer {
   display: flex;
   justify-content: space-between;
@@ -1303,6 +1660,14 @@ footer {
 
   .quiz-toolbar {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .bank-heading-row {
+    align-items: flex-start;
+  }
+
+  .console-settings {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1386,6 +1751,31 @@ footer {
 
   .quiz-footer-actions #quiz-message {
     width: 100%;
+    margin-left: 0;
+  }
+
+  .bank-heading-row,
+  .script-console-heading,
+  .ai-review-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bank-stats {
+    justify-content: flex-start;
+  }
+
+  .bank-actions .text-button {
+    width: 100%;
+    margin-left: 0;
+    text-align: left;
+  }
+
+  .console-settings {
+    grid-template-columns: 1fr;
+  }
+
+  .console-actions .text-button:first-of-type {
     margin-left: 0;
   }
 

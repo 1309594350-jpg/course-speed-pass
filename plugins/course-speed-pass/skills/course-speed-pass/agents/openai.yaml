@@ -1,5 +1,5 @@
 interface:
   display_name: "Course speed pass"
-  short_description: "创建本地模拟课程、智能答题与 Playwright 验收沙盒"
+  short_description: "创建带题库和可控任务队列的本地答题验收沙盒"
   brand_color: "#2D6A4F"
-  default_prompt: "Use $course-speed-pass to create a local simulated course and quiz automation lab, then verify both flows with Playwright."
+  default_prompt: "Use $course-speed-pass to create a local simulated course with importable fictional question banks, a controllable local task queue, and manual AI review, then verify it with Playwright."
